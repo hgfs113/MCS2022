@@ -14,6 +14,7 @@ from models import models
 from data import get_dataloader
 from train import train, validation
 from utils import convert_dict_to_tuple
+from torch.utils.tensorboard import SummaryWriter
 
 
 def main(args: argparse.Namespace) -> None:
@@ -35,6 +36,10 @@ def main(args: argparse.Namespace) -> None:
     torch.backends.cudnn.deterministic = True
     torch.backends.cudnn.benchmark = True
 
+    if not os.path.exists(args.logs):
+        os.makedirs(args.logs)
+    tensorboard_writer = SummaryWriter(args.logs)
+    print(f"Tensorboard logs will be written in {args.logs}")
 
     outdir = osp.join(config.outdir, config.exp_name)
     print("Savedir: {}".format(outdir))
@@ -45,20 +50,25 @@ def main(args: argparse.Namespace) -> None:
 
     print("Loading model...")
     net = models.load_model(config)
+    criterion, optimizer, scheduler = utils.get_training_parameters(config, net)
+    start_epoch = 0
+    if args.checkpoint != '':
+        print("Start from checkpoint:", args.checkpoint)
+        start_epoch = utils.load_checkpoint(net, criterion, optimizer, scheduler, args.checkpoint)
+
     if config.num_gpu > 1:
         net = torch.nn.DataParallel(net)
     print("Done.")
 
-    criterion, optimizer, scheduler = utils.get_training_parameters(config, net)
-    train_epoch = tqdm(range(config.train.n_epoch), dynamic_ncols=True, desc='Epochs', position=0)
+    train_epoch = tqdm(range(start_epoch, config.train.n_epoch), dynamic_ncols=True, desc='Epochs', position=0)
 
     # main process
     best_acc = 0.0
     for epoch in train_epoch:
-        train(net, train_loader, criterion, optimizer, config, epoch)
-        epoch_avg_acc = validation(net, val_loader, criterion, epoch)
+        train(net, train_loader, criterion, optimizer, config, epoch, tensorboard_writer)
+        epoch_avg_acc = validation(net, val_loader, criterion, epoch, tensorboard_writer)
         if epoch_avg_acc >= best_acc:
-            utils.save_checkpoint(net, optimizer, scheduler, epoch, outdir)
+            utils.save_checkpoint(net, criterion, optimizer, scheduler, epoch, outdir)
             best_acc = epoch_avg_acc
         scheduler.step()
 
@@ -66,6 +76,8 @@ def main(args: argparse.Namespace) -> None:
 def parse_arguments(argv):
     parser = argparse.ArgumentParser()
     parser.add_argument('--cfg', type=str, default='config/baseline_mcs.yml', help='Path to config file.')
+    parser.add_argument('--checkpoint', type=str, default='', help='Path to checkpoint.')
+    parser.add_argument('--logs', type=str, default='log_tb', help='Path to logs.')
     return parser.parse_args(argv)
 
 

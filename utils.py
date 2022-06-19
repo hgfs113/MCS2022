@@ -17,7 +17,7 @@ def convert_dict_to_tuple(dictionary):
     return namedtuple('GenericDict', dictionary.keys())(**dictionary)
 
 
-def save_checkpoint(model, optimizer, scheduler, epoch, outdir):
+def save_checkpoint(model, criterion, optimizer, scheduler, epoch, outdir):
     """Saves checkpoint to disk"""
     filename = "model_{:04d}.pth".format(epoch)
     directory = outdir
@@ -25,12 +25,23 @@ def save_checkpoint(model, optimizer, scheduler, epoch, outdir):
     weights = model.state_dict()
     state = OrderedDict([
         ('state_dict', weights),
+        ('loss', criterion.state_dict()),
         ('optimizer', optimizer.state_dict()),
         ('scheduler', scheduler.state_dict()),
         ('epoch', epoch),
     ])
 
     torch.save(state, filename)
+
+
+def load_checkpoint(model, criterion, optimizer, scheduler, filename):
+    """Loads checkpoint from disk"""
+    checkpoint = torch.load(filename)
+    model.load_state_dict(checkpoint['state_dict'])
+    criterion.load_state_dict(checkpoint['loss'])
+    optimizer.load_state_dict(checkpoint['optimizer'])
+    scheduler.load_state_dict(checkpoint['scheduler'])
+    return checkpoint['epoch']
 
 
 class LabelSmoothingCrossEntropy(nn.Module):

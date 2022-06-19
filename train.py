@@ -9,7 +9,8 @@ def train(model: torch.nn.Module,
           train_loader: torch.utils.data.DataLoader,
           criterion: torch.nn.Module,
           optimizer: torch.optim.Optimizer,
-          config, epoch) -> None:
+          config, epoch,
+          tensorboard_writer) -> None:
     """
     Model training function for one epoch
     :param model: model architecture
@@ -18,6 +19,7 @@ def train(model: torch.nn.Module,
     :param optimizer: selected optimizer for updating weights
     :param config: train process configuration
     :param epoch (int): epoch number
+    :param tensorboard_writer: tensorboard writer
     :return: None
     """
     model.train()
@@ -45,6 +47,9 @@ def train(model: torch.nn.Module,
         acc = np.mean(gt == predict)
         acc_stat.update(acc, num_of_samples)
 
+        tensorboard_writer.add_scalar("step_acc", acc, step)
+        tensorboard_writer.add_scalar("step_loss", loss.item(), step)
+
         if step % config.train.freq_vis == 0 and not step == 0:
             acc_val, acc_avg = acc_stat()
             loss_val, loss_avg = loss_stat()
@@ -53,12 +58,14 @@ def train(model: torch.nn.Module,
     acc_val, acc_avg = acc_stat()
     loss_val, loss_avg = loss_stat()
     print('Train process of epoch: {} is done; \n loss: {:.4f}; acc: {:.2f}'.format(epoch, loss_avg, acc_avg))
+    tensorboard_writer.add_scalar("epoch_acc", acc_avg, epoch)
+    tensorboard_writer.add_scalar("epoch_loss", loss_avg, epoch)
 
 
 def validation(model: torch.nn.Module,
                val_loader: torch.utils.data.DataLoader,
                criterion: torch.nn.Module,
-               epoch) -> None:
+               epoch, tensorboard_writer) -> None:
     """
     Model validation function for one epoch
     :param model: model architecture
@@ -91,4 +98,6 @@ def validation(model: torch.nn.Module,
         acc_val, acc_avg = acc_stat()
         loss_val, loss_avg = loss_stat()
         print('Validation of epoch: {} is done; \n loss: {:.4f}; acc: {:.2f}'.format(epoch, loss_avg, acc_avg))
+        tensorboard_writer.add_scalar("epoch_val_acc", acc_avg, epoch)
+        tensorboard_writer.add_scalar("epoch_val_loss", loss_avg, epoch)
         return acc_avg
