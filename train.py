@@ -28,6 +28,7 @@ def train(model: torch.nn.Module,
     acc_stat = AverageMeter('Acc.')
 
     train_iter = tqdm(train_loader, desc='Train', dynamic_ncols=True, position=1)
+    train_len = len(train_loader)
 
     for step, (x, y) in enumerate(train_iter):
         out = model(x.cuda().to(memory_format=torch.contiguous_format))
@@ -47,8 +48,8 @@ def train(model: torch.nn.Module,
         acc = np.mean(gt == predict)
         acc_stat.update(acc, num_of_samples)
 
-        tensorboard_writer.add_scalar("step_acc", acc, step)
-        tensorboard_writer.add_scalar("step_loss", loss.item(), step)
+        tensorboard_writer.add_scalar("step_acc", acc, step + epoch * train_len)
+        tensorboard_writer.add_scalar("step_loss", loss.item(), step + epoch * train_len)
 
         if step % config.train.freq_vis == 0 and not step == 0:
             acc_val, acc_avg = acc_stat()
