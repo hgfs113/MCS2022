@@ -14,7 +14,7 @@ from sklearn.preprocessing import normalize
 from data.dataset import CarsDataset
 from data.augmentations import get_val_aug
 from utils import convert_dict_to_tuple, calculate_embeddings_dist
-
+from models.models import load_model
 
 def main(args: argparse.Namespace) -> None:
     with open(args.exp_cfg) as f:
@@ -27,7 +27,7 @@ def main(args: argparse.Namespace) -> None:
 
     # getting model and checkpoint
     print('Creating model and loading checkpoint')
-    model = models.__dict__[exp_cfg.model.arch](num_classes=exp_cfg.dataset.num_of_classes)
+    model = load_model(exp_cfg)
     checkpoint = torch.load(args.checkpoint_path, map_location='cuda')['state_dict']
 
     new_state_dict = OrderedDict()
@@ -77,7 +77,7 @@ def main(args: argparse.Namespace) -> None:
     for row in submit_pairs_df.itertuples():
         embedding1 = embeddings[imgname2idx_dict[row.img1]]
         embedding2 = embeddings[imgname2idx_dict[row.img2]]
-        dist_arr[row.Index] = calculate_embeddings_dist(embedding1, embedding2, distance='cosine')
+        dist_arr[row.Index] = calculate_embeddings_dist(embedding1, embedding2, distance='euclidean')
 
     submit_pairs_df['dist'] = dist_arr
 

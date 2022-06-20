@@ -63,13 +63,13 @@ def main(args: argparse.Namespace) -> None:
     train_epoch = tqdm(range(start_epoch, config.train.n_epoch), dynamic_ncols=True, desc='Epochs', position=0)
 
     # main process
-    best_acc = 0.0
+    best_eer = 0.0
     for epoch in train_epoch:
         train(net, train_loader, criterion, optimizer, config, epoch, tensorboard_writer)
-        epoch_avg_acc = validation(net, val_loader, criterion, epoch, tensorboard_writer)
-        if epoch_avg_acc >= best_acc:
+        epoch_avg_acc, epoch_eer = validation(net, val_loader, criterion, epoch, tensorboard_writer)
+        if epoch_eer >= best_eer:
             utils.save_checkpoint(net, criterion, optimizer, scheduler, epoch, outdir)
-            best_acc = epoch_avg_acc
+            best_eer = epoch_eer
         scheduler.step()
 
 

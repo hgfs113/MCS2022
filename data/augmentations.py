@@ -9,7 +9,9 @@ def get_train_aug(config):
         train_augs = tv.transforms.Compose([
             tv.transforms.RandomResizedCrop(config.dataset.input_size),
             tv.transforms.RandomHorizontalFlip(),
-            tv.transforms.RandomRotation(30),
+            tv.transforms.RandomRotation(45),
+            tv.transforms.RandomPosterize(bits=2, p=0.3),
+            tv.transforms.RandomAdjustSharpness(sharpness_factor=2, p=0.3),
             tv.transforms.RandomPerspective(distortion_scale=0.3, p=0.2),
             tv.transforms.RandomAdjustSharpness(),
             tv.transforms.RandomApply([
