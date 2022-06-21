@@ -13,7 +13,6 @@ def get_train_aug(config):
             tv.transforms.RandomPosterize(bits=2, p=0.3),
             tv.transforms.RandomAdjustSharpness(sharpness_factor=2, p=0.3),
             tv.transforms.RandomPerspective(distortion_scale=0.3, p=0.2),
-            tv.transforms.RandomAdjustSharpness(),
             tv.transforms.RandomApply([
                 tv.transforms.ColorJitter(
                     brightness=2, contrast=2,
